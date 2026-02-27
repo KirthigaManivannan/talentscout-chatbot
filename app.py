@@ -1,6 +1,4 @@
 import streamlit as st
-import os
-from dotenv import load_dotenv
 
 from prompts import SYSTEM_PROMPT
 from utils import (
@@ -8,17 +6,6 @@ from utils import (
     is_exit_command,
     analyze_sentiment
 )
-
-# -------------------------
-# Load Environment Variables
-# -------------------------
-load_dotenv()
-
-api_key = os.getenv("OPENAI_API_KEY")
-
-if not api_key:
-    st.error("OPENAI_API_KEY not found. Please check your .env file.")
-    st.stop()
 
 # -------------------------
 # Page Configuration
@@ -39,7 +26,7 @@ st.sidebar.info(
     
     This chatbot helps conduct initial candidate screening 
     by collecting information and generating technical 
-    interview questions based on your tech stack.
+    interview questions based on your skills.
     """
 )
 
@@ -75,6 +62,7 @@ if not st.session_state.conversation_ended:
 
     if user_input:
 
+        # Exit Handling
         if is_exit_command(user_input):
             farewell = (
                 "Thank you for applying to TalentScout. "
@@ -92,25 +80,28 @@ if not st.session_state.conversation_ended:
             st.session_state.conversation_ended = True
             st.stop()
 
+        # Display user message
         with st.chat_message("user"):
             st.markdown(user_input)
 
+        # Sentiment analysis
         sentiment = analyze_sentiment(user_input)
         st.sidebar.write(f"Candidate Sentiment: {sentiment}")
 
+        # Save user message
         st.session_state.messages.append(
             {"role": "user", "content": user_input}
         )
 
-        try:
-            reply = get_llm_response(st.session_state.messages)
-        except Exception:
-            reply = "Temporary issue occurred. Please try again."
+        # Generate bot reply (offline logic)
+        reply = get_llm_response(st.session_state.messages)
 
+        # Save assistant reply
         st.session_state.messages.append(
             {"role": "assistant", "content": reply}
         )
 
+        # Display assistant reply
         with st.chat_message("assistant"):
             st.markdown(reply)
 
